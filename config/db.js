@@ -2,10 +2,17 @@ const mongoose = require("mongoose");
 
 const connectDB = async () => {
   try {
-    await mongoose.connect("mongodb://127.0.0.1:27017/defirouter");
-    console.log("MongoDB connected (LOCAL)");
+    const mongoURI = process.env.MONGO_URI;
+
+    if (!mongoURI) {
+      throw new Error("MONGO_URI is not defined");
+    }
+
+    await mongoose.connect(mongoURI);
+
+    console.log("MongoDB connected");
   } catch (error) {
-    console.error("MongoDB error:", error.message);
+    console.error("MongoDB connection failed:", error.message);
     process.exit(1);
   }
 };
