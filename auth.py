@@ -1,45 +1,65 @@
+from flask import Blueprint, request, jsonify
+import json
+import os
 
-function registerUser() {
-  const name = document.getElementById("name").value;
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+auth_bp = Blueprint("auth", __name__)
 
-  if (!name || !email || !password) {
-    alert("Fill all fields");
-    return;
-  }
+USERS_FILE = "users.json"
 
-  localStorage.setItem(
-    "user",
-    JSON.stringify({ name, email, password })
-  );
+# Create users.json if not exists
+if not os.path.exists(USERS_FILE):
+    with open(USERS_FILE, "w") as f:
+        json.dump([], f)
 
-  alert("Registered successfully");
-  window.location.href = "login.html";
-}
 
-function loginUser() {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+def load_users():
+    with open(USERS_FILE, "r") as f:
+        return json.load(f)
 
-  const user = JSON.parse(localStorage.getItem("user"));
 
-  if (!user) {
-    alert("No user found. Please register.");
-    return;
-  }
+def save_users(users):
+    with open(USERS_FILE, "w") as f:
+        json.dump(users, f, indent=4)
 
-  if (user.email === email && user.password === password) {
-    localStorage.setItem("token", "demo-auth-token");
-    alert("Login successful");
-    window.location.href = "index.html";
-  } else {
-    alert("Invalid credentials");
-  }
-}
 
-function logoutUser() {
-  localStorage.removeItem("token");
-  alert("Logged out");
-  window.location.href = "login.html";
-}
+@auth_bp.route("/register", methods=["POST"])
+def register():
+    data = request.json
+    name = data.get("name")
+    email = data.get("email")
+    password = data.get("password")
+
+    users = load_users()
+
+    # check if user exists
+    for user in users:
+        if user["email"] == email:
+            return jsonify({"message": "User already exists"}), 400
+
+    users.append({
+        "name": name,
+        "email": email,
+        "password": password
+    })
+
+    save_users(users)
+
+    return jsonify({"message": "Registration successful"})
+
+
+@auth_bp.route("/login", methods=["POST"])
+def login():
+    data = request.json
+    email = data.get("email")
+    password = data.get("password")
+
+    users = load_users()
+
+    for user in users:
+        if user["email"] == email and user["password"] == password:
+            return jsonify({
+                "message": "Login successful",
+                "token": "demo-token"
+            })
+
+    return jsonify({"message": "Invalid credentials"}), 401
