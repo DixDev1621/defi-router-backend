@@ -6,7 +6,9 @@ import os
 
 app = Flask(__name__)
 app.register_blueprint(auth_bp, url_prefix="/api/auth")
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}}, 
+supports_credentials=True)
+
 
 # ✅ Etherscan V2 API key (Polygon supported)
 API_KEY = "12ZRKG2A616KXZXHYUHBFCBX1D1PKGM8WN"
